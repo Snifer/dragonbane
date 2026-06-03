@@ -12,7 +12,7 @@
           <q-input class="row" label="Name" v-model="app.char.name" dense />
 
           <div class="row">
-            <q-select class="col" label="Age" v-model="app.char.age" :options="Object.values(EAge)" dense />
+            <q-select class="col" label="Age" v-model="app.char.age" :options="Object.values(Ages)" dense />
             <q-input class="col" label="Movement" type="number" v-model.number="app.char.movement" dense />
           </div>
         </div>
@@ -42,28 +42,28 @@
       <q-btn v-if="statsRolled" class="col-12 q-mb-sm" icon="mdi-dice-d20" flat @click="rollStats" label="Roll stats">
         <q-tooltip>Roll stats</q-tooltip>
       </q-btn>
-      <div class="col-xs-4 col-sm-2 col-md-2">
-        <char-attr :label="EAttr.STR" v-model="app.char.attributes.STR" />
+      <div class="col-xs-4 col-sm-3 col-md-2">
+        <char-attr :label="Attrs.STR" v-model="app.char.attributes.STR" />
       </div>
 
-      <div class="col-xs-4 col-sm-2 col-md-2">
-        <char-attr :label="EAttr.CON" v-model="app.char.attributes.CON" />
+      <div class="col-xs-4 col-sm-3 col-md-2">
+        <char-attr :label="Attrs.CON" v-model="app.char.attributes.CON" />
       </div>
 
-      <div class="col-xs-4 col-sm-2 col-md-2">
-        <char-attr :label="EAttr.AGL" v-model="app.char.attributes.AGL" />
+      <div class="col-xs-4 col-sm-3 col-md-2">
+        <char-attr :label="Attrs.AGL" v-model="app.char.attributes.AGL" />
       </div>
 
-      <div class="col-xs-4 col-sm-2 col-md-2">
-        <char-attr :label="EAttr.INT" v-model="app.char.attributes.INT" />
+      <div class="col-xs-4 col-sm-3 col-md-2">
+        <char-attr :label="Attrs.INT" v-model="app.char.attributes.INT" />
       </div>
 
-      <div class="col-xs-4 col-sm-2 col-md-2">
-        <char-attr :label="EAttr.WIL" v-model="app.char.attributes.WIL" />
+      <div class="col-xs-4 col-sm-3 col-md-2">
+        <char-attr :label="Attrs.WIL" v-model="app.char.attributes.WIL" />
       </div>
 
-      <div class="col-xs-4 col-sm-2 col-md-2">
-        <char-attr :label="EAttr.CHA" v-model="app.char.attributes.CHA" />
+      <div class="col-xs-4 col-sm-3 col-md-2">
+        <char-attr :label="Attrs.CHA" v-model="app.char.attributes.CHA" />
       </div>
     </div>
 
@@ -98,83 +98,57 @@
   </q-page>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref, computed } from 'vue';
+<script lang="ts" setup>
+import { ref, computed } from 'vue';
 
-import { EAge, EAttr } from 'src/components/models';
+import { Attrs, type Attr, Ages } from '../components/models';
 
 import { useQuasar } from 'quasar';
-import { useCharacterStore } from 'src/stores/character';
+import { useCharacterStore } from '../stores/character';
 
-import { BaseChance, DmgBonus } from 'src/lib/defaults';
+import CharAttr from '../components/CharAttr.vue';
+import PointsBlock from '../components/PointsBlock.vue';
+import SkillsTab from '../components/SkillsTab.vue';
+import CombatTab from '../components/CombatTab.vue';
+import AbilitiesTab from '../components/AbilitiesTab.vue';
+import GearTab from '../components/GearTab.vue';
 
-import CharAttr from 'src/components/CharAttr.vue';
-import PointsBlock from 'src/components/PointsBlock.vue';
-import SkillsTab from 'src/components/SkillsTab.vue';
-import CombatTab from 'src/components/CombatTab.vue';
-import AbilitiesTab from 'src/components/AbilitiesTab.vue';
-import GearTab from 'src/components/GearTab.vue';
+const app = useCharacterStore();
+const tab = ref('skills');
 
-export default defineComponent({
-  name: 'IndexPage',
-  components: {
-    CharAttr,
-    PointsBlock,
-    SkillsTab,
-    CombatTab,
-    AbilitiesTab,
-    GearTab,
-  },
-  setup() {
-    const app = useCharacterStore();
-    const tab = ref('skills');
+const $q = useQuasar();
+const rollStats = () =>
+  $q
+    .dialog({
+      message: 'Roll and apply Character Stats?',
+      cancel: true,
+    })
+    .onOk(() => {
+      const r = (): number => {
+        let sum = 0;
 
-    const $q = useQuasar();
-    const rollStats = () =>
-      $q
-        .dialog({
-          message: 'Roll and apply Character Stats?',
-          cancel: true,
-        })
-        .onOk(() => {
-          const r = (): number => {
-            let sum = 0;
+        const rolls: number[] = new Array(4).fill(0);
+        rolls.forEach((n, i) => (rolls[i] = Math.floor(Math.random() * 6) + 1));
+        rolls.sort();
+        rolls.shift();
+        rolls.forEach((roll) => (sum += roll));
 
-            let rolls: number[] = new Array(4).fill(0);
-            rolls.forEach((n, i) => (rolls[i] = Math.floor(Math.random() * 6) + 1));
-            rolls.sort();
-            rolls.shift();
-            rolls.forEach((roll) => (sum += roll));
+        return sum;
+      };
 
-            return sum;
-          };
+      Object.keys(Attrs).forEach((attr) => (app.char.attributes[attr as Attr].score = r()));
 
-          Object.keys(EAttr).forEach((attr) => (app.char.attributes[attr as EAttr].score = r()));
+      const hp = app.char.attributes.CON.score;
+      app.char.hp.max = hp;
+      app.char.hp.current = hp;
 
-          const hp = app.char.attributes[EAttr.CON].score;
-          app.char.hp.max = hp;
-          app.char.hp.current = hp;
-
-          const wp = app.char.attributes[EAttr.WIL].score;
-          app.char.wp.max = wp;
-          app.char.wp.current = wp;
-        });
-    const statsRolled = computed((): boolean => {
-      let total = 0;
-      Object.keys(EAttr).forEach((attr) => (total += app.char.attributes[attr as EAttr].score));
-      return total == 0;
+      const wp = app.char.attributes.WIL.score;
+      app.char.wp.max = wp;
+      app.char.wp.current = wp;
     });
-
-    return {
-      app,
-      tab,
-      EAttr,
-      EAge,
-      DmgBonus,
-      BaseChance,
-      rollStats,
-      statsRolled,
-    };
-  },
+const statsRolled = computed((): boolean => {
+  let total = 0;
+  Object.keys(Attrs).forEach((attr) => (total += app.char.attributes[attr as Attr].score));
+  return total == 0;
 });
 </script>

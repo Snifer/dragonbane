@@ -13,7 +13,7 @@
   <weapon-block
     v-for="(w, i) in app.char.weapons"
     :key="`wpn-${i}`"
-    v-model="app.char.weapons[i]"
+    v-model="app.char.weapons[i]!"
     @delete="removeWeapon(i)"
   />
 
@@ -29,17 +29,17 @@
     <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3">
       <char-skill
         v-if="show('Evade')"
-        v-model="app.char.priSkills['Evade']"
+        v-model="app.char.priSkills['Evade']!"
         label="Evade"
-        :skill-type="ERollType.Primary"
+        :skill-type="RollTypes.Primary"
       />
     </div>
     <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3" v-for="(sk, k) in app.char.wepSkills" :key="`skill-${k}`">
       <char-skill
         v-if="show(k as string)"
-        v-model="app.char.wepSkills[k]"
+        v-model="app.char.wepSkills[k]!"
         :label="`${k}`"
-        :skill-type="ERollType.Weapon"
+        :skill-type="RollTypes.Weapon"
       />
     </div>
   </div>
@@ -54,55 +54,37 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, computed, ref } from 'vue';
+<script lang="ts" setup>
+import { computed, ref } from 'vue';
 
-import { useCharacterStore } from 'src/stores/character';
+import { useCharacterStore } from '../stores/character';
 import { useQuasar } from 'quasar';
 
-import { NewWeapon, DmgBonus } from 'src/lib/defaults';
+import { NewWeapon, DmgBonus } from '../lib/defaults';
 
-import CharSkill from 'src/components/CharSkill.vue';
-import WeaponBlock from 'src/components/WeaponBlock.vue';
-import ArmourBlock from 'src/components/ArmourBlock.vue';
-import { ERollType } from './models';
+import CharSkill from '../components/CharSkill.vue';
+import WeaponBlock from '../components/WeaponBlock.vue';
+import ArmourBlock from '../components/ArmourBlock.vue';
+import { RollTypes } from './models';
 
-export default defineComponent({
-  name: 'CombatTab',
-  components: { CharSkill, WeaponBlock, ArmourBlock },
-  setup() {
-    const app = useCharacterStore();
+const app = useCharacterStore();
 
-    const $q = useQuasar();
-    const addWeapon = () => app.char.weapons.push(NewWeapon());
-    const removeWeapon = (index: number) =>
-      $q
-        .dialog({
-          message: 'Remove this weapon?',
-          cancel: true,
-        })
-        .onOk(() => app.char.weapons.splice(index, 1));
+const $q = useQuasar();
+const addWeapon = () => app.char.weapons.push(NewWeapon());
+const removeWeapon = (index: number) =>
+  $q
+    .dialog({
+      message: 'Remove this weapon?',
+      cancel: true,
+    })
+    .onOk(() => app.char.weapons.splice(index, 1));
 
-    const armourRating = computed((): number => app.char.armour.rating + app.char.helmet.rating);
+const armourRating = computed((): number => app.char.armour.rating + app.char.helmet.rating);
 
-    const filter = ref('');
-    const show = (name: string): boolean => {
-      if (filter.value == '' || filter.value == null) return true;
-      if (RegExp(filter.value, 'i').test(name)) return true;
-      return false;
-    };
-
-    return {
-      app,
-
-      addWeapon,
-      removeWeapon,
-      DmgBonus,
-      armourRating,
-      ERollType,
-      filter,
-      show,
-    };
-  },
-});
+const filter = ref('');
+const show = (name: string): boolean => {
+  if (filter.value == '' || filter.value == null) return true;
+  if (RegExp(filter.value, 'i').test(name)) return true;
+  return false;
+};
 </script>

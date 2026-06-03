@@ -20,8 +20,10 @@
         </div>
       </div>
 
-      <div class="col column items-center">
-        <div class="row text-caption text-center">Dice to roll</div>
+      <q-separator vertical />
+
+      <div class="col column justify-between">
+        <div class="row text-bold justify-center text-center q-mb-md">Dice Pool</div>
         <div class="row items-center justify-center">
           <div
             class="col-shrink rounded-borders bg-white text-black q-ma-xs"
@@ -39,45 +41,18 @@
   </q-card-section>
 </template>
 
-<script lang="ts">
-import { PropType, defineComponent, ref, watch } from 'vue';
+<script lang="ts" setup>
+import { ref } from 'vue';
 
-import { IDie } from './models';
+import type { IDie } from './models';
 
-import { deepCopy } from 'src/lib/util';
+import { deepCopy } from '../lib/util';
 
-export default defineComponent({
-  name: 'DiceSelect',
-  props: {
-    modelValue: {
-      type: Array as PropType<IDie[]>,
-      required: true,
-    },
-  },
-  emits: ['update:modelValue'],
-  setup(props, { emit }) {
-    const dice = ref(props.modelValue);
-    watch(
-      () => props.modelValue,
-      () => (dice.value = props.modelValue),
-      { deep: true }
-    );
-    watch(
-      () => dice.value,
-      () => emit('update:modelValue', dice.value),
-      { deep: true }
-    );
-    const newDie = ref(<IDie>{ n: 1, size: 10 });
-    const addDie = () => dice.value.unshift(deepCopy(newDie.value));
-    const rmDie = (index: number) => dice.value.splice(index, 1);
-    return {
-      dice,
-      newDie,
-      addDie,
-      rmDie,
-    };
-  },
-});
+const dice = defineModel<IDie[]>({ required: true });
+
+const newDie = ref({ n: 1, size: 10 });
+const addDie = () => dice.value.unshift(deepCopy(newDie.value));
+const rmDie = (index: number) => dice.value.splice(index, 1);
 </script>
 
 <style lang="sass">

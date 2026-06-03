@@ -43,7 +43,7 @@
 
           <div v-if="spell.rank > 0" class="row">
             <q-input class="col" label="Casting Time" v-model="spell.time" dense />
-            <q-select class="col" label="Duration" v-model="spell.duration" :options="Object.values(EDuration)" dense />
+            <q-select class="col" label="Duration" v-model="spell.duration" :options="Object.values(Durations)" dense />
           </div>
 
           <div v-if="spell.rank > 0" class="row items-end">
@@ -52,7 +52,7 @@
               label="Requirements"
               v-model="spell.req"
               multiple
-              :options="Object.values(ESpellReq)"
+              :options="Object.values(SpellReqs)"
               dense
             />
             <q-input class="col" label="Range" v-model="spell.range" dense />
@@ -60,7 +60,7 @@
 
           <q-input
             class="row"
-            v-if="spell.req.includes(ESpellReq.Ingredient)"
+            v-if="spell.req.includes(SpellReqs.Ingredient)"
             label="Ingredient"
             v-model="spell.ingredient"
             dense
@@ -79,9 +79,10 @@
   <q-dialog v-model="display.roller" :maximized="$q.screen.lt.md" position="right" full-height>
     <dice-roller
       :name="spell.name"
-      :roll-type="ERollType.Spell"
-      :skill="spell.skill"
+      :roll-type="RollTypes.Spell"
+      :skill="spell.skill!"
       :target="app.skill('secSkills', spell.skill!)"
+      :boons="0"
       :banes="app.banes('secSkills', spell.skill!)"
       @close="display.roller = false"
       @result="(r) => setResultDisplay(r)"
@@ -135,13 +136,17 @@
           <q-expansion-item label="Magical Mishap Table" header-class="text-h6">
             <table>
               <thead>
-                <th>D20</th>
-                <th>Effect</th>
+                <tr>
+                  <th>D20</th>
+                  <th>Effect</th>
+                </tr>
               </thead>
-              <tr v-for="(row, i) in MagicalMishap.rows" :key="`mm-${i}`">
-                <td class="q-pa-xs">{{ row.floor }}</td>
-                <td class="q-pa-xs">{{ row.text }}</td>
-              </tr>
+              <tbody>
+                <tr v-for="(row, i) in MagicalMishap.rows" :key="`mm-${i}`">
+                  <td class="q-pa-xs">{{ row.floor }}</td>
+                  <td class="q-pa-xs">{{ row.text }}</td>
+                </tr>
+              </tbody>
             </table>
           </q-expansion-item>
         </q-card-section>
@@ -158,148 +163,106 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
-import { computed, defineComponent, PropType, ref, watch } from 'vue';
+<script lang="ts" setup>
+import { computed, ref } from 'vue';
 
-import { ED20Result, EDuration, ERollType, ESpellReq, IDiceRoll, ISpell } from './models';
+import { D20Results, Durations, type IDiceRoll, type ISpell, RollTypes, SpellReqs } from './models';
 
 import { useQuasar } from 'quasar';
-import { useCharacterStore } from 'src/stores/character';
+import { useCharacterStore } from '../stores/character';
 
-import { rollDice, parseDiceString } from 'src/lib/util';
-import { MagicalMishap, rollTable } from 'src/lib/tables';
+import { rollDice, parseDiceString } from '../lib/util';
+import { MagicalMishap, rollTable } from '../lib/tables';
 
 import DiceRoller from './DiceRoller.vue';
 import DiceSelect from './DiceSelect.vue';
 import ActionItemRow from './ActionItemRow.vue';
 
-export default defineComponent({
-  name: 'SpellBlock',
-  components: { DiceRoller, DiceSelect, ActionItemRow },
-  props: {
-    modelValue: {
-      type: Object as PropType<ISpell>,
-      required: true,
-    },
-  },
-  emits: ['update:modelValue', 'delete'],
-  setup(props, { emit }) {
-    const spell = ref(props.modelValue);
-    watch(
-      () => props.modelValue,
-      () => (spell.value = props.modelValue)
-    );
-    watch(
-      () => spell.value,
-      () => emit('update:modelValue', spell.value)
-    );
+const spell = defineModel<ISpell>({ required: true });
+defineEmits(['delete']);
 
-    const app = useCharacterStore();
-    const skills = computed((): string[] => Object.keys(app.char.secSkills));
-    const dmgDice = ref(parseDiceString(spell.value.text));
-    // For spells we only include the first dice set mentioned
-    dmgDice.value.splice(1);
-    const dmgRes = ref(<IDiceRoll>{ total: 0, results: [] });
-    const parseResult = () => dmgRes.value.results.map((d) => `${d.d.n}d${d.d.size}: ${d.v.join(', ')}`);
-    const display = ref({
-      roller: false,
-      select: false,
-      success: false,
-      dragon: false,
-      demon: false,
-    });
+const app = useCharacterStore();
+const skills = computed((): string[] => Object.keys(app.char.secSkills));
+const dmgDice = ref(parseDiceString(spell.value.text));
+// For spells we only include the first dice set mentioned
+dmgDice.value.splice(1);
+const dmgRes = ref(<IDiceRoll>{ total: 0, results: [] });
+const parseResult = () => dmgRes.value.results.map((d) => `${d.d.n}d${d.d.size}: ${d.v.join(', ')}`);
+const display = ref({
+  roller: false,
+  select: false,
+  success: false,
+  dragon: false,
+  demon: false,
+});
 
-    const setResultDisplay = (r: string) => {
-      display.value = {
-        roller: true,
-        select: false,
-        success: false,
-        dragon: false,
-        demon: false,
-      };
+const setResultDisplay = (r: string) => {
+  display.value = {
+    roller: true,
+    select: false,
+    success: false,
+    dragon: false,
+    demon: false,
+  };
 
-      switch (r) {
-        case ED20Result.Dragon:
-          display.value.dragon = true;
-          break;
-        case ED20Result.Demon:
-          display.value.demon = true;
-          break;
-        case ED20Result.Success:
-          display.value.success = true;
-        default:
-          break;
-      }
-    };
+  switch (r) {
+    case D20Results.Dragon:
+      display.value.dragon = true;
+      break;
+    case D20Results.Demon:
+      display.value.demon = true;
+      break;
+    case D20Results.Success:
+      display.value.success = true;
+      break;
+    default:
+      break;
+  }
+};
 
-    const showRoller = () => {
-      if (checkWP(2)) {
-        setResultDisplay('-');
-        dmgRes.value = { total: 0, results: [] };
-      }
-    };
+const showRoller = () => {
+  if (checkWP(2)) {
+    setResultDisplay('-');
+    dmgRes.value = { total: 0, results: [] };
+  }
+};
 
-    const mishap = ref('');
+const mishap = ref('');
 
-    const $q = useQuasar();
-    const useMagicTrick = (name: string) =>
-      checkWP(1)
-        ? $q
-            .dialog({
-              title: `Spend 1 WP to use ${name}?`,
-              ok: true,
-              cancel: true,
-            })
-            .onOk(() => app.char.wp.current--)
-        : undefined;
+const $q = useQuasar();
+const useMagicTrick = (name: string) =>
+  checkWP(1)
+    ? $q
+        .dialog({
+          title: `Spend 1 WP to use ${name}?`,
+          ok: true,
+          cancel: true,
+        })
+        .onOk(() => app.char.wp.current--)
+    : undefined;
 
-    const checkWP = (wpReq: number): boolean => {
-      let out = false;
-      app.char.wp.current < wpReq
-        ? $q
-            .dialog({
-              title: 'Out of Juice!',
-              message: `You have ${app.char.wp.current}WP`,
-              ok: true,
-            })
-            .onOk(() => (out = false))
-        : (out = true);
-      return out;
-    };
+const checkWP = (wpReq: number): boolean => {
+  let out = false;
+  if (app.char.wp.current < wpReq) {
+    $q.dialog({
+      title: 'Out of Juice!',
+      message: `You have ${app.char.wp.current}WP`,
+      ok: true,
+    }).onOk(() => (out = false));
+  } else {
+    out = true;
+  }
+  return out;
+};
 
-    const pl = ref(1);
-    const powerLevels = computed((): number[] => {
-      let out = <number[]>[];
+const pl = ref(1);
+const powerLevels = computed((): number[] => {
+  const out = <number[]>[];
 
-      const lvls = [1, 2, 3];
-      lvls.forEach((n) => (n * 2 <= app.char.wp.current ? out.push(n) : undefined));
+  const lvls = [1, 2, 3];
+  lvls.forEach((n) => (n * 2 <= app.char.wp.current ? out.push(n) : undefined));
 
-      return out;
-    });
-
-    return {
-      spell,
-      ESpellReq,
-      EDuration,
-
-      app,
-      pl,
-      display,
-      showRoller,
-      setResultDisplay,
-      ERollType,
-      skills,
-      rollDice,
-      dmgDice,
-      dmgRes,
-      parseResult,
-      MagicalMishap,
-      mishap,
-      rollTable,
-      useMagicTrick,
-      powerLevels,
-    };
-  },
+  return out;
 });
 </script>
 

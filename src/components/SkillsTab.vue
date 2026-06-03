@@ -13,7 +13,7 @@
     </div>
     <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3" v-for="(sk, k) in app.char.priSkills" :key="`priSkill-${k}`">
       <div v-if="show(k as string)">
-        <char-skill v-model="app.char.priSkills[k]" :label="`${k}`" :skill-type="ERollType.Primary" />
+        <char-skill v-model="app.char.priSkills[k]!" :label="`${k}`" :skill-type="RollTypes.Primary" />
       </div>
     </div>
   </div>
@@ -25,11 +25,11 @@
     </div>
     <div class="col-xs-12 col-sm-6 col-md-4 col-lg-3" v-for="(sk, k) in app.char.secSkills" :key="`secSkill-${k}`">
       <char-skill
-        v-model="app.char.secSkills[k]"
+        v-model="app.char.secSkills[k]!"
         :label="`${k}`"
         show-delete
         @delete="removeSecSkill"
-        :skill-type="ERollType.Secondary"
+        :skill-type="RollTypes.Secondary"
       />
     </div>
   </div>
@@ -38,7 +38,7 @@
     <q-card>
       <q-card-section class="column">
         <q-input label="Skill Name" v-model="newSkillName" dense />
-        <q-select label="Attribute" :options="Object.values(EAttr)" v-model="newSkillAttr" dense />
+        <q-select label="Attribute" :options="Object.values(Attrs)" v-model="newSkillAttr" dense />
       </q-card-section>
       <q-card-actions class="row justify-evenly">
         <q-btn
@@ -67,53 +67,36 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
-import { defineComponent, ref } from 'vue';
+<script lang="ts" setup>
+import { ref } from 'vue';
 
-import { EAttr, ERollType } from './models';
+import { Attrs, RollTypes } from './models';
+
+import { useQuasar } from 'quasar';
+import { useCharacterStore } from '../stores/character';
+
+import { skill } from '../lib/defaults';
 
 import CharSkill from './CharSkill.vue';
-import { useQuasar } from 'quasar';
-import { skill } from 'src/lib/defaults';
-import { useCharacterStore } from 'src/stores/character';
 
-export default defineComponent({
-  name: 'SkillsTab',
-  components: { CharSkill },
-  setup() {
-    const app = useCharacterStore();
+const app = useCharacterStore();
 
-    const $q = useQuasar();
-    const showAddSkill = ref(false);
-    const newSkillName = ref('');
-    const newSkillAttr = ref(EAttr.STR);
-    const removeSecSkill = (val: string) =>
-      $q
-        .dialog({
-          message: 'Delete this skill?',
-          cancel: true,
-        })
-        .onOk(() => delete app.char.secSkills[val]);
+const $q = useQuasar();
+const showAddSkill = ref(false);
+const newSkillName = ref('');
+const newSkillAttr = ref(Attrs.STR);
+const removeSecSkill = (val: string) =>
+  $q
+    .dialog({
+      message: 'Delete this skill?',
+      cancel: true,
+    })
+    .onOk(() => delete app.char.secSkills[val]);
 
-    const filter = ref('');
-    const show = (name: string): boolean => {
-      if (filter.value == '' || filter.value == null) return true;
-      if (RegExp(filter.value, 'i').test(name)) return true;
-      return false;
-    };
-
-    return {
-      app,
-      skill,
-      showAddSkill,
-      newSkillName,
-      newSkillAttr,
-      removeSecSkill,
-      filter,
-      show,
-      EAttr,
-      ERollType,
-    };
-  },
-});
+const filter = ref('');
+const show = (name: string): boolean => {
+  if (filter.value == '' || filter.value == null) return true;
+  if (RegExp(filter.value, 'i').test(name)) return true;
+  return false;
+};
 </script>

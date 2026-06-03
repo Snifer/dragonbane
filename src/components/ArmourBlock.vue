@@ -10,7 +10,7 @@
     <div class="row items-center justify-center">
       <q-checkbox
         class="col-shrink"
-        v-for="(a, i) in amr.bane"
+        v-for="(_, i) in amr.bane"
         :key="`amr-${i}`"
         :label="`${i}`"
         v-model="amr.bane[i]"
@@ -19,35 +19,10 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent, PropType, ref, watch } from 'vue';
-import { IArmour } from './models';
-export default defineComponent({
-  name: 'ArmourBlock',
-  props: {
-    modelValue: {
-      type: Object as PropType<IArmour>,
-      required: true,
-    },
-    label: {
-      type: String,
-    },
-  },
-  emits: ['update:modelValue', 'delete'],
-  setup(props, { emit }) {
-    const amr = ref(props.modelValue);
-    watch(
-      () => props.modelValue,
-      () => (amr.value = props.modelValue)
-    );
-    watch(
-      () => amr.value,
-      () => emit('update:modelValue', amr.value)
-    );
+<script lang="ts" setup>
+import type { IArmour } from './models';
 
-    return {
-      amr,
-    };
-  },
-});
+const amr = defineModel<IArmour>({ required: true });
+defineProps<{ label: string }>();
+defineEmits(['delete']);
 </script>

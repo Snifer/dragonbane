@@ -17,76 +17,44 @@
       color="white"
     />
   </div>
+
   <q-dialog v-model="showRoller" :maximized="$q.screen.lt.sm" position="right" full-height>
     <dice-roller
       :name="label"
       :banes="attr.condition.check ? 1 : 0"
+      :boons="0"
       :target="attr.score"
-      :roll-type="ERollType.Attr"
+      :roll-type="RollTypes.Attr"
       @close="showRoller = false"
     />
   </q-dialog>
 </template>
 
-<script lang="ts">
-import { defineComponent, PropType, ref, watch } from 'vue';
+<script lang="ts" setup>
+import { ref } from 'vue';
 
-import { ERollType, IAttribute } from './models';
+import { RollTypes, type IAttribute } from './models';
 
 import { useQuasar } from 'quasar';
 
 import DiceRoller from './DiceRoller.vue';
 
-export default defineComponent({
-  name: 'CharStat',
-  components: { DiceRoller },
-  props: {
-    modelValue: {
-      type: Object as PropType<IAttribute>,
-      required: true,
-    },
-    label: {
-      type: String,
-      required: true,
-    },
-  },
-  emits: ['update:modelValue'],
-  setup(props, { emit }) {
-    const attr = ref(props.modelValue);
-    watch(
-      () => props.modelValue,
-      () => (attr.value = props.modelValue),
-      { deep: true }
-    );
-    watch(
-      () => attr.value,
-      () => emit('update:modelValue', attr.value),
-      { deep: true }
-    );
+const attr = defineModel<IAttribute>({ required: true });
+const props = defineProps<{ label: string }>();
+const $q = useQuasar();
+const editAttr = () =>
+  $q
+    .dialog({
+      title: `Edit ${props.label}`,
+      cancel: true,
+      prompt: {
+        type: 'number',
+        model: `${attr.value.score}`,
+        min: 3,
+        max: 18,
+      },
+    })
+    .onOk((n) => (attr.value.score = n));
 
-    const $q = useQuasar();
-    const editAttr = () =>
-      $q
-        .dialog({
-          title: `Edit ${props.label}`,
-          cancel: true,
-          prompt: {
-            type: 'number',
-            model: `${attr.value.score}`,
-            min: 3,
-            max: 18,
-          },
-        })
-        .onOk((n) => (attr.value.score = n));
-
-    const showRoller = ref(false);
-
-    return {
-      attr,
-      editAttr,
-      showRoller,
-      ERollType,
-    };
-  },
-});
+const showRoller = ref(false);
 </script>

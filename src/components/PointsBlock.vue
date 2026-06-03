@@ -19,43 +19,13 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
-import { defineComponent, PropType, ref, watch } from 'vue';
-import { IPoints } from './models';
-export default defineComponent({
-  name: 'PointsBlock',
-  props: {
-    modelValue: {
-      type: Object as PropType<IPoints>,
-      required: true,
-    },
-    label: {
-      type: String,
-      required: true,
-    },
-    showMax: {
-      type: Boolean,
-    },
-  },
-  emits: ['update:modelValue'],
-  setup(props, { emit }) {
-    const points = ref(props.modelValue);
-    watch(
-      () => props.modelValue,
-      () => (points.value = props.modelValue)
-    );
-    watch(
-      () => points.value,
-      () => emit('update:modelValue', points.value)
-    );
+<script lang="ts" setup>
+import { ref } from 'vue';
 
-    const showEditDialog = ref(false);
+import type { IPoints } from './models';
 
-    return {
-      points,
+const points = defineModel<IPoints>({ required: true });
+defineProps<{ label: string; showMax?: boolean }>();
 
-      showEditDialog,
-    };
-  },
-});
+const showEditDialog = ref(false);
 </script>

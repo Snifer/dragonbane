@@ -1,5 +1,4 @@
 <template>
-  <!-- file deepcode ignore PureFunctionReturnValueIgnored: The return value is passed to a component -->
   <action-item-row>
     <template v-slot:prepend>
       <q-btn v-if="weapon.skill" icon="mdi-dice-d20" @click="showRoller" flat dense />
@@ -19,7 +18,7 @@
             class="col-xs-3 col-sm-1 q-pr-xs"
             label="Grip"
             v-model="weapon.grip"
-            :options="Object.values(EGrip)"
+            :options="Object.values(Grips)"
             dense
           />
           <q-input class="col-xs-3 col-sm-1 q-pr-xs" label="Range" v-model="weapon.range" dense />
@@ -46,10 +45,11 @@
   <q-dialog v-model="display.roller" :maximized="$q.screen.lt.sm" position="right" full-height>
     <dice-roller
       :name="weapon.name"
-      :roll-type="ERollType.Attack"
+      :roll-type="RollTypes.Attack"
       :target="app.skill('wepSkills', weapon.skill!)"
+      :boons="0"
       :banes="app.banes('wepSkills', weapon.skill!)"
-      :skill="weapon.skill"
+      :skill="weapon.skill!"
       @close="display.roller = false"
       @result="(r) => setResultDisplay(r)"
     >
@@ -112,13 +112,17 @@
 
               <table>
                 <thead>
-                  <th>D6</th>
-                  <th>Effect</th>
+                  <tr>
+                    <th>D6</th>
+                    <th>Effect</th>
+                  </tr>
                 </thead>
-                <tr v-for="(row, i) in MeleeDemon.rows" :key="`md-${i}`">
-                  <td class="q-pa-xs">{{ row.floor }}</td>
-                  <td class="q-pa-xs">{{ row.text }}</td>
-                </tr>
+                <tbody>
+                  <tr v-for="(row, i) in MeleeDemon.rows" :key="`md-${i}`">
+                    <td class="q-pa-xs">{{ row.floor }}</td>
+                    <td class="q-pa-xs">{{ row.text }}</td>
+                  </tr>
+                </tbody>
               </table>
             </div>
           </q-expansion-item>
@@ -137,13 +141,17 @@
 
               <table>
                 <thead>
-                  <th>D6</th>
-                  <th>Effect</th>
+                  <tr>
+                    <th>D6</th>
+                    <th>Effect</th>
+                  </tr>
                 </thead>
-                <tr v-for="(row, i) in RangedDemon.rows" :key="`rd-${i}`">
-                  <td class="q-pa-xs">{{ row.floor }}</td>
-                  <td class="q-pa-xs">{{ row.text }}</td>
-                </tr>
+                <tbody>
+                  <tr v-for="(row, i) in RangedDemon.rows" :key="`rd-${i}`">
+                    <td class="q-pa-xs">{{ row.floor }}</td>
+                    <td class="q-pa-xs">{{ row.text }}</td>
+                  </tr>
+                </tbody>
               </table>
             </div>
           </q-expansion-item>
@@ -167,122 +175,85 @@
   </q-dialog>
 </template>
 
-<script lang="ts">
-import { computed, defineComponent, PropType, ref, watch } from 'vue';
+<script lang="ts" setup>
+import { computed, ref, watch } from 'vue';
 
-import { IWeapon, EGrip, ERollType, IDiceRoll, ED20Result } from './models';
+import { type IWeapon, type IDiceRoll, D20Results, RollTypes, Grips } from './models';
 
-import { useCharacterStore } from 'src/stores/character';
+import { useQuasar } from 'quasar';
+import { useCharacterStore } from '../stores/character';
 
-import { parseDiceString, rollDice } from 'src/lib/util';
-import { MeleeDemon, RangedDemon, rollTable } from 'src/lib/tables';
+import { parseDiceString, rollDice } from '../lib/util';
+import { MeleeDemon, RangedDemon, rollTable } from '../lib/tables';
 
 import DiceRoller from './DiceRoller.vue';
 import DiceSelect from './DiceSelect.vue';
 import ActionItemRow from './ActionItemRow.vue';
 
-export default defineComponent({
-  name: 'WeaponBlock',
-  components: { DiceRoller, DiceSelect, ActionItemRow },
-  props: {
-    modelValue: {
-      type: Object as PropType<IWeapon>,
-      required: true,
-    },
-  },
-  emits: ['update:modelValue', 'delete'],
-  setup(props, { emit }) {
-    const weapon = ref(props.modelValue);
-    watch(
-      () => props.modelValue,
-      () => (weapon.value = props.modelValue)
-    );
-    watch(
-      () => weapon.value,
-      () => emit('update:modelValue', weapon.value)
-    );
+const weapon = defineModel<IWeapon>({ required: true });
+defineEmits(['delete']);
 
-    const app = useCharacterStore();
-    const skills = computed((): string[] => Object.keys(app.char.wepSkills));
-    const display = ref({
-      roller: false,
-      select: false,
-      success: false,
-      dragon: false,
-      demon: false,
-    });
-
-    const dmgDice = ref(parseDiceString(weapon.value.damage));
-
-    const dmgBonus = computed(() =>
-      weapon.value.skill ? app.dmgBonus(app.char.wepSkills[weapon.value.skill].attr) : '-'
-    );
-    if (dmgBonus.value != '-') dmgDice.value.push(...parseDiceString(dmgBonus.value));
-    watch(
-      () => weapon.value.damage,
-      () => {
-        dmgDice.value = parseDiceString(weapon.value.damage);
-        if (dmgBonus.value != '-') dmgDice.value.push(...parseDiceString(dmgBonus.value));
-      }
-    );
-
-    const dmgRes = ref(<IDiceRoll>{ total: 0, results: [] });
-    const parseResult = () => dmgRes.value.results.map((d) => `${d.d.n}d${d.d.size}: ${d.v.join(', ')}`);
-
-    const setResultDisplay = (r: string) => {
-      display.value = {
-        roller: true,
-        select: false,
-        success: false,
-        dragon: false,
-        demon: false,
-      };
-
-      switch (r) {
-        case ED20Result.Dragon:
-          display.value.dragon = true;
-          break;
-        case ED20Result.Demon:
-          display.value.demon = true;
-          break;
-        case ED20Result.Success:
-          display.value.success = true;
-        default:
-          break;
-      }
-    };
-
-    const mishap = ref({
-      melee: '',
-      ranged: '',
-    });
-
-    const showRoller = () => {
-      setResultDisplay('-');
-      dmgRes.value = { total: 0, results: [] };
-    };
-
-    return {
-      app,
-      weapon,
-      skills,
-      EGrip,
-
-      display,
-      mishap,
-      MeleeDemon,
-      RangedDemon,
-      setResultDisplay,
-      ERollType,
-      dmgDice,
-      dmgRes,
-      rollDice,
-      rollTable,
-      parseResult,
-      showRoller,
-    };
-  },
+const $q = useQuasar();
+const app = useCharacterStore();
+const skills = computed((): string[] => Object.keys(app.char.wepSkills));
+const display = ref({
+  roller: false,
+  select: false,
+  success: false,
+  dragon: false,
+  demon: false,
 });
+
+const dmgDice = ref(parseDiceString(weapon.value.damage));
+
+const dmgBonus = computed(() =>
+  weapon.value.skill ? app.dmgBonus(app.char.wepSkills[weapon.value.skill]!.attr) : '-',
+);
+if (dmgBonus.value != '-') dmgDice.value.push(...parseDiceString(dmgBonus.value));
+watch(
+  () => weapon.value.damage,
+  () => {
+    dmgDice.value = parseDiceString(weapon.value.damage);
+    if (dmgBonus.value != '-') dmgDice.value.push(...parseDiceString(dmgBonus.value));
+  },
+);
+
+const dmgRes = ref(<IDiceRoll>{ total: 0, results: [] });
+const parseResult = () => dmgRes.value.results.map((d) => `${d.d.n}d${d.d.size}: ${d.v.join(', ')}`);
+
+const setResultDisplay = (r: string) => {
+  display.value = {
+    roller: true,
+    select: false,
+    success: false,
+    dragon: false,
+    demon: false,
+  };
+
+  switch (r) {
+    case D20Results.Dragon:
+      display.value.dragon = true;
+      break;
+    case D20Results.Demon:
+      display.value.demon = true;
+      break;
+    case D20Results.Success:
+      display.value.success = true;
+      break;
+    default:
+      break;
+  }
+};
+
+const mishap = ref({
+  melee: '',
+  ranged: '',
+});
+
+const showRoller = () => {
+  setResultDisplay('-');
+  dmgRes.value = { total: 0, results: [] };
+};
 </script>
 
 <style lang="sass">
