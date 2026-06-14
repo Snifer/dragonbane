@@ -1,12 +1,12 @@
 <template>
   <div class="row text-bold q-mt-xs">
-    <span v-if="armourRating > 0">&nbsp;Armour: {{ armourRating }};&nbsp;</span>
-    Dmg Bonus: STR: {{ DmgBonus(app.char.attributes.STR.score) }}, AGL:
+    <span v-if="armourRating > 0">&nbsp;{{ t('combat.armourRating') }}: {{ armourRating }};&nbsp;</span>
+    {{ t('combat.damageBonus') }}: STR: {{ DmgBonus(app.char.attributes.STR.score) }}, AGL:
     {{ DmgBonus(app.char.attributes.AGL.score) }}
   </div>
 
   <div class="row q-mt-md q-mb-sm text-h5 text-bold items-center">
-    Weapons
+    {{ t('tabs.weapons') }}
     <q-btn icon="add_circle" flat dense rounded @click="addWeapon" />
   </div>
 
@@ -18,8 +18,8 @@
   />
 
   <div class="row items-baseline q-mt-md">
-    <div class="col-shrink text-h5 text-bold">Combat Skills</div>
-    <q-input class="col-grow q-ml-sm" label="Search" v-model="filter" clearable dense>
+    <div class="col-shrink text-h5 text-bold">{{ t('tabs.combatSkills') }}</div>
+    <q-input class="col-grow q-ml-sm" :label="t('common.search')" v-model="filter" clearable dense>
       <template v-slot:prepend>
         <q-icon name="search" />
       </template>
@@ -30,7 +30,8 @@
       <char-skill
         v-if="show('Evade')"
         v-model="app.char.priSkills['Evade']!"
-        label="Evade"
+        :label="t('combat.evade')"
+        skill-name="Evade"
         :skill-type="RollTypes.Primary"
       />
     </div>
@@ -38,18 +39,19 @@
       <char-skill
         v-if="show(k as string)"
         v-model="app.char.wepSkills[k]!"
-        :label="`${k}`"
+        :label="skillLabel(k as string)"
+        :skill-name="k as string"
         :skill-type="RollTypes.Weapon"
       />
     </div>
   </div>
   <div class="row justify-between items-center text-center q-mt-md">
     <div class="col-xs-12 col-sm-5">
-      <armour-block label="Armour" v-model="app.char.armour" />
+      <armour-block :label="t('tabs.armour')" v-model="app.char.armour" />
     </div>
 
     <div class="col-xs-12 col-sm-5">
-      <armour-block label="Helmet" v-model="app.char.helmet" />
+      <armour-block :label="t('tabs.helmet')" v-model="app.char.helmet" />
     </div>
   </div>
 </template>
@@ -59,7 +61,9 @@ import { computed, ref } from 'vue';
 
 import { useCharacterStore } from '../stores/character';
 import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 
+import { skillLabelKey } from '../lib/domain';
 import { NewWeapon, DmgBonus } from '../lib/defaults';
 
 import CharSkill from '../components/CharSkill.vue';
@@ -68,16 +72,21 @@ import ArmourBlock from '../components/ArmourBlock.vue';
 import { RollTypes } from './models';
 
 const app = useCharacterStore();
+const { t } = useI18n();
 
 const $q = useQuasar();
 const addWeapon = () => app.char.weapons.push(NewWeapon());
 const removeWeapon = (index: number) =>
   $q
     .dialog({
-      message: 'Remove this weapon?',
+      message: t('dialog.removeWeapon'),
       cancel: true,
     })
     .onOk(() => app.char.weapons.splice(index, 1));
+const skillLabel = (name: string): string => {
+  const key = skillLabelKey(name);
+  return key ? t(key) : name;
+};
 
 const armourRating = computed((): number => app.char.armour.rating + app.char.helmet.rating);
 

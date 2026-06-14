@@ -8,7 +8,7 @@
         <q-btn class="col-shrink" flat rounded dense icon="close" @click="showEdit = false" />
       </q-card-section>
       <q-card-section class="row justify-center text-bold">
-        You have {{ dollaBills }} {{ label.toLowerCase() }}
+        {{ t('dialog.youHaveCurrency', { amount: dollaBills, currency: label.toLowerCase() }) }}
       </q-card-section>
       <q-card-section class="row justify-evenly items-center">
         <q-btn
@@ -21,7 +21,7 @@
             editVal = 0;
           "
         >
-          <q-tooltip>Spend some</q-tooltip>
+          <q-tooltip>{{ t('gear.spendSome') }}</q-tooltip>
         </q-btn>
         <q-input class="col-grow" input-class="text-center text-bold" type="number" v-model.number="editVal" dense />
         <q-btn
@@ -34,7 +34,7 @@
             editVal = 0;
           "
         >
-          <q-tooltip>Gain some</q-tooltip>
+          <q-tooltip>{{ t('gear.gainSome') }}</q-tooltip>
         </q-btn>
       </q-card-section>
     </q-card>
@@ -42,13 +42,13 @@
 </template>
 
 <script lang="ts" setup>
-import { useQuasar } from 'quasar';
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 const dollaBills = defineModel<number>({ required: true });
 defineProps<{ label: string }>();
 
 const showEdit = ref(false);
 const editVal = ref(0);
-const $q = useQuasar();
+const { t } = useI18n();
 </script>

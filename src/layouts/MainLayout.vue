@@ -6,28 +6,28 @@
 
         <q-toolbar-title>Dragonbane</q-toolbar-title>
         <q-btn icon="mdi-arrow-up-bold-hexagon-outline" @click="advance" flat>
-          <q-tooltip>Roll Advancements</q-tooltip>
+          <q-tooltip>{{ t('layout.rollAdvancements') }}</q-tooltip>
         </q-btn>
         <q-btn-dropdown icon="mdi-bed" flat>
           <q-list>
             <q-item clickable v-ripple @click="rest.round()">
               <q-item-section>
-                <q-item-label>ROUND</q-item-label>
-                <q-item-label caption>D6 WP</q-item-label>
+                <q-item-label>{{ t('layout.rest.round') }}</q-item-label>
+                <q-item-label caption>{{ t('layout.rest.roundCaption') }}</q-item-label>
               </q-item-section>
             </q-item>
 
             <q-item clickable v-ripple @click="rest.stretch()">
               <q-item-section>
-                <q-item-label>STRETCH</q-item-label>
-                <q-item-label caption>D6 HP, D6 WP. Clear one condition</q-item-label>
+                <q-item-label>{{ t('layout.rest.stretch') }}</q-item-label>
+                <q-item-label caption>{{ t('layout.rest.stretchCaption') }}</q-item-label>
               </q-item-section>
             </q-item>
 
             <q-item clickable v-ripple @click="rest.shift()">
               <q-item-section>
-                <q-item-label>SHIFT</q-item-label>
-                <q-item-label caption>All HP, WP. Clear all conditions</q-item-label>
+                <q-item-label>{{ t('layout.rest.shift') }}</q-item-label>
+                <q-item-label caption>{{ t('layout.rest.shiftCaption') }}</q-item-label>
               </q-item-section>
             </q-item>
           </q-list>
@@ -36,7 +36,7 @@
     </q-header>
 
     <q-drawer v-model="leftDrawerOpen" bordered>
-      <q-btn class="full-width" label="New Character" flat @click="app.chars.push(NewCharacter())" icon-right="add" />
+      <q-btn class="full-width" :label="t('layout.newCharacter')" flat @click="createCharacter" icon-right="add" />
       <q-list>
         <q-item
           class="items-center"
@@ -60,8 +60,8 @@
             <q-icon name="download" />
           </q-item-section>
           <q-item-section>
-            Export Character Data
-            <q-tooltip>Download your character data as a .json file</q-tooltip>
+            {{ t('layout.exportData') }}
+            <q-tooltip>{{ t('layout.exportDataTooltip') }}</q-tooltip>
           </q-item-section>
         </q-item>
 
@@ -70,8 +70,8 @@
             <q-icon name="upload" />
           </q-item-section>
           <q-item-section>
-            Load Character Data
-            <q-tooltip>Load previously exported character data</q-tooltip>
+            {{ t('layout.loadData') }}
+            <q-tooltip>{{ t('layout.loadDataTooltip') }}</q-tooltip>
           </q-item-section>
         </q-item>
 
@@ -79,13 +79,27 @@
 
         <q-item>
           <q-item-section>
-            <q-toggle label="Show Spells" v-model="app.conf.showSpells" />
+            <q-toggle :label="t('layout.showSpells')" v-model="app.conf.showSpells" />
           </q-item-section>
         </q-item>
 
         <q-item>
           <q-item-section>
-            <q-toggle label="Show 'Trained'" v-model="app.conf.showTrainedSkills" />
+            <q-select
+              v-model="app.conf.locale"
+              :options="languageOptions"
+              :label="t('common.language')"
+              emit-value
+              map-options
+              dense
+              outlined
+            />
+          </q-item-section>
+        </q-item>
+
+        <q-item>
+          <q-item-section>
+            <q-toggle :label="t('layout.showTrained')" v-model="app.conf.showTrainedSkills" />
           </q-item-section>
         </q-item>
 
@@ -96,7 +110,7 @@
             <q-icon name="info" />
           </q-item-section>
           <q-item-section>
-            <q-item-label>About</q-item-label>
+            <q-item-label>{{ t('common.about') }}</q-item-label>
           </q-item-section>
         </q-item>
       </q-list>
@@ -109,42 +123,52 @@
 
   <q-dialog v-model="showDataLoad" :maximized="$q.platform.is.mobile">
     <q-card>
-      <q-card-section class="text-center text-bold bg-secondary">Load Character Data</q-card-section>
+      <q-card-section class="text-center text-bold bg-secondary">{{ t('layout.loadData') }}</q-card-section>
 
       <q-card-section class="text-subtitle">
-        Please bear in mind that this data will overwrite any existing versions of the same character.
+        {{ t('layout.overwriteWarning') }}
       </q-card-section>
 
       <q-card-section>
-        <q-file v-model="fileToLoad" standout label="Select File" accept=".json" />
+        <q-file v-model="fileToLoad" standout :label="t('layout.selectFile')" accept=".json" />
       </q-card-section>
 
       <q-card-actions align="center">
-        <q-btn label="load" color="primary" @click="loadData" flat />
-        <q-btn label="close" color="warning" @click="showDataLoad = false" flat />
+        <q-btn :label="t('common.load')" color="primary" @click="loadData" flat />
+        <q-btn :label="t('common.close')" color="warning" @click="showDataLoad = false" flat />
       </q-card-actions>
     </q-card>
   </q-dialog>
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
 
 import type { Attr, IDBStore } from '../components/models';
 
 import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 import { useCharacterStore } from '../stores/character';
 
 import { NewCharacter } from '../lib/defaults';
+import { localeOptions } from '../lib/domain';
 import { roll } from '../lib/util';
 
 const leftDrawerOpen = ref(false);
 
 const app = useCharacterStore();
 const $q = useQuasar();
+const { t } = useI18n();
+const languageOptions = computed(() =>
+  localeOptions.map((option) => ({
+    value: option.value,
+    label: t(option.labelKey),
+  })),
+);
 
 const showDataLoad = ref(false);
 const fileToLoad = ref(null);
+const createCharacter = () => app.chars.push(NewCharacter(t('character.newName')));
 const loadData = () => {
   const f: File = fileToLoad.value as unknown as File;
   const reader = new FileReader();
@@ -159,7 +183,7 @@ const loadData = () => {
 const removeChar = (index: number) =>
   $q
     .dialog({
-      message: `Delete ${app.chars[index]!.name}?`,
+      message: t('layout.deleteCharacter', { name: app.chars[index]!.name }),
       cancel: true,
     })
     .onOk(() => {
@@ -187,19 +211,22 @@ const rest = {
 const advance = () => {
   const advanced = app.rollAdvancements();
   $q.dialog({
-    title: `${advanced.length} skills advanced.`,
-    message: advanced.length > 0 ? `Advanced: ${advanced.join(', ')}` : 'No skills advanced',
+    title: t('layout.skillsAdvancedTitle', { count: advanced.length }),
+    message:
+      advanced.length > 0
+        ? t('layout.skillsAdvancedMessage', { skills: advanced.join(', ') })
+        : t('layout.noSkillsAdvanced'),
     ok: true,
   });
 };
 
 const about = () =>
   $q.dialog({
-    title: '<div class="text-h5">About</div>',
+    title: `<div class="text-h5">${t('layout.aboutTitle')}</div>`,
     html: true,
-    message: `<p>This app is not affiliated with, sponsored, or endorsed by Fria Ligan AB.</p>
-      <p>This work is open source. If you would like to contribute please check out my <a href="https://github.com/nboughton/dragonbane">Github repository</a> and submit a pull request.</p>
-      <p>If you like my work and would like to toss a coin to your app developer you can support me on <a href="https://ko-fi.com/tiberianpun">ko-fi</a>.</p>`,
+    message: `<p>${t('layout.aboutBody1')}</p>
+      <p>${t('layout.aboutBody2')}</p>
+      <p>${t('layout.aboutBody3')}</p>`,
   });
 
 const toggleLeftDrawer = () => {

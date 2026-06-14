@@ -3,7 +3,7 @@
     <div class="row items-center justify-center">
       <div class="col column">
         <div class="row items-center justify-center q-mb-sm">
-          <q-btn class="col-shrink" label="add dice" @click="addDie" color="white" text-color="black" />
+          <q-btn class="col-shrink" :label="t('dice.addDice')" @click="addDie" color="white" text-color="black" />
         </div>
 
         <div class="row items-center justify-center">
@@ -23,7 +23,7 @@
       <q-separator vertical />
 
       <div class="col column justify-between">
-        <div class="row text-bold justify-center text-center q-mb-md">Dice Pool</div>
+        <div class="row text-bold justify-center text-center q-mb-md">{{ t('dice.pool') }}</div>
         <div class="row items-center justify-center">
           <div
             class="col-shrink rounded-borders bg-white text-black q-ma-xs"
@@ -43,12 +43,14 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue';
+import { useI18n } from 'vue-i18n';
 
 import type { IDie } from './models';
 
 import { deepCopy } from '../lib/util';
 
 const dice = defineModel<IDie[]>({ required: true });
+const { t } = useI18n();
 
 const newDie = ref({ n: 1, size: 10 });
 const addDie = () => dice.value.unshift(deepCopy(newDie.value));

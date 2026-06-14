@@ -2,7 +2,7 @@
   <div class="row justify-between" v-if="app.conf.showSpells">
     <div class="col-xs-12 col-sm-12 col-lg-6 q-px-xs">
       <div class="row q-mt-md q-mb-sm text-h5 text-bold items-center">
-        Heroic Abilities
+        {{ t('tabs.heroicAbilities') }}
         <q-btn icon="add_circle" flat dense rounded @click="addAbl" />
       </div>
       <ability-block
@@ -16,11 +16,11 @@
     <div class="col-xs-12 col-sm-12 col-lg-6 q-px-xs">
       <div class="row q-mt-md q-mb-sm text-h5 text-bold items-center justify-between">
         <div class="col-shrink">
-          Spells
+          {{ t('tabs.spells') }}
           <q-btn icon="add_circle" flat dense rounded @click="addSpell" />
         </div>
 
-        <q-input class="col-grow q-px-sm" label="Search" v-model="filter" clearable dense>
+        <q-input class="col-grow q-px-sm" :label="t('common.search')" v-model="filter" clearable dense>
           <template v-slot:prepend>
             <q-icon name="search" />
           </template>
@@ -33,25 +33,25 @@
           unchecked-icon="mdi-eye-off"
           color="white"
         >
-          <q-tooltip>Toggle prepared spells</q-tooltip>
+          <q-tooltip>{{ t('tabs.prepared') }}</q-tooltip>
         </q-checkbox>
 
         <q-btn class="col-shrink" icon="sort" flat dense rounded @click="sortSpells">
-          <q-tooltip>Sort spells by rank</q-tooltip>
+          <q-tooltip>{{ t('tabs.knownByRank') }}</q-tooltip>
         </q-btn>
       </div>
 
       <div class="row items-center">
-        <div class="col-shrink text-bold">Known (by rank):</div>
+        <div class="col-shrink text-bold">{{ t('tabs.knownByRank') }}</div>
         <div class="col-shrink" v-for="(r, i) in spellsByRank" :key="`ranked-spells-${i}`">
           <span class="q-ml-sm q-pa-xs rounded-borders" v-if="r > 0">
-            {{ i < 1 ? 'Magic Tricks' : 'Rank ' + i }}: {{ r }}
+            {{ i < 1 ? t('spell.magicTricks') : t('spell.rankN', { rank: i }) }}: {{ r }}
           </span>
         </div>
       </div>
 
       <div class="row items-center q-mt-xs">
-        <div class="col-shrink text-bold">Prepared:</div>
+        <div class="col-shrink text-bold">{{ t('tabs.prepared') }}</div>
         <div class="col-shrink q-ml-sm q-px-xs">
           {{ spellsPrepared }}/{{ BaseChance(app.char.attributes.INT.score) }}
         </div>
@@ -64,7 +64,7 @@
   </div>
   <div v-else>
     <div class="row q-mt-md q-mb-sm text-h5 text-bold items-center">
-      Heroic Abilities
+      {{ t('tabs.heroicAbilities') }}
       <q-btn icon="add_circle" flat dense rounded @click="addAbl" />
     </div>
     <ability-block
@@ -80,6 +80,7 @@
 import { computed, ref } from 'vue';
 
 import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 import { useCharacterStore } from '../stores/character';
 
 import { NewAbility, NewSpell, BaseChance } from '../lib/defaults';
@@ -89,13 +90,14 @@ import SpellBlock from './SpellBlock.vue';
 import type { ISpell } from './models';
 
 const app = useCharacterStore();
+const { t } = useI18n();
 
 const $q = useQuasar();
 const addSpell = () => app.char.spells.push(NewSpell());
 const removeSpell = (index: number) =>
   $q
     .dialog({
-      message: 'Delete this spell?',
+      message: t('dialog.deleteSpell'),
       cancel: true,
     })
     .onOk(() => app.char.spells.splice(index, 1));
@@ -124,7 +126,7 @@ const addAbl = () => app.char.abilities.push(NewAbility());
 const removeAbl = (index: number) =>
   $q
     .dialog({
-      message: 'Delete this ability?',
+      message: t('dialog.deleteAbility'),
       cancel: true,
     })
     .onOk(() => app.char.abilities.splice(index, 1));

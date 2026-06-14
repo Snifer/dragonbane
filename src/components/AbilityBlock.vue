@@ -14,11 +14,11 @@
       >
         <div class="column q-my-sm">
           <div class="row">
-            <q-input class="col" label="Name" v-model="abl.name" dense />
+            <q-input class="col" :label="t('common.name')" v-model="abl.name" dense />
             <q-input class="col-xs-2 col-sm-1" label="WP" v-model.number="abl.wp" type="number" dense />
           </div>
 
-          <q-input class="row" label="Text" v-model="abl.text" dense autogrow />
+          <q-input class="row" :label="t('common.text')" v-model="abl.text" dense autogrow />
         </div>
       </q-expansion-item>
     </template>
@@ -34,6 +34,7 @@ import type { IAbility } from './models';
 
 import { useCharacterStore } from '../stores/character';
 import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 
 import ActionItemRow from './ActionItemRow.vue';
 
@@ -42,16 +43,17 @@ defineEmits(['delete']);
 
 const $q = useQuasar();
 const app = useCharacterStore();
+const { t } = useI18n();
 const activate = () =>
   $q
     .dialog({
-      title: `Use ${abl.value.name}?`,
+      title: t('ability.useTitle', { name: abl.value.name }),
       message: abl.value.text,
       prompt: {
-        label: 'Spend WP',
+        label: t('ability.spendWp'),
         model: `${abl.value.wp}`,
         type: 'number',
-        hint: `current WP: ${app.char.wp.current}`,
+        hint: t('ability.currentWp', { wp: app.char.wp.current }),
         max: app.char.wp.current,
       },
       ok: true,

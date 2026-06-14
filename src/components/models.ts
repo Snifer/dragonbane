@@ -8,6 +8,7 @@ export interface IConfig {
   showTrainedSkills?: boolean;
   showSpells?: boolean;
   darkMode?: boolean;
+  locale?: Locale;
 }
 
 export interface ICharacter {
@@ -139,42 +140,43 @@ export const Attrs = {
 export type Attr = (typeof Attrs)[keyof typeof Attrs]
 
 export const Conditions = {
-  Exhausted : 'Exhausted',
-  Sickly : 'Sickly',
-  Dazed : 'Dazed',
-  Angry : 'Angry',
-  Scared : 'Scared',
-  Disheartened : 'Disheartened',
+  Exhausted : 'exhausted',
+  Sickly : 'sickly',
+  Dazed : 'dazed',
+  Angry : 'angry',
+  Scared : 'scared',
+  Disheartened : 'disheartened',
 } as const
 
 export type Condition = (typeof Conditions)[keyof typeof Conditions]
 
 export const Durations = {
-  Instant : 'Instant',
-  Round : 'Round',
-  Stretch : 'Stretch',
-  Shift : 'Shift',
-  Concentration : 'Concentration',
+  Instant : 'instant',
+  Round : 'round',
+  Stretch : 'stretch',
+  Shift : 'shift',
+  Concentration : 'concentration',
 } as const
 
 export type Duration = (typeof Durations)[keyof typeof Durations]
 
 export const SpellReqs = {
-  Word : 'Word',
-  Gesture : 'Gesture',
-  Focus : 'Focus',
-  Ingredient : 'Ingredient',
+  Word : 'word',
+  Gesture : 'gesture',
+  Focus : 'focus',
+  Ingredient : 'ingredient',
 } as const
 
 export type SpellReq = (typeof SpellReqs)[keyof typeof SpellReqs]
 
 export const Ages = {
-  Young : 'Young',
-  Adult : 'Adult',
-  Old : 'Old',
+  Young : 'young',
+  Adult : 'adult',
+  Old : 'old',
 } as const
 
 export type Age = (typeof Ages)[keyof typeof Ages]
+export type Locale = 'en-US' | 'es-AR';
 
 export const Grips = {
   None : '-',
@@ -196,10 +198,10 @@ export const RollTypes = {
 export type RollType = (typeof RollTypes)[keyof typeof RollTypes]
 
 export const D20Results = {
-  Dragon : 'Dragon!',
-  Demon : 'Demon!',
-  Success : 'Success!',
-  Fail : 'Failure',
+  Dragon : 'dragon',
+  Demon : 'demon',
+  Success : 'success',
+  Fail : 'fail',
 } as const
 
 export type D20Result = (typeof D20Results)[keyof typeof D20Results]

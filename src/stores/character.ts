@@ -1,24 +1,30 @@
 import { defineStore } from 'pinia';
 
-import type { Attr, ICharacter, IConfig, IDBStore, SkillType } from '../components/models';
+import type { Attr, IAttribute, ICharacter, IConfig, IDBStore, ISpell, SkillType } from '../components/models';
 
 import { exportFile } from 'quasar';
 
 import { DmgBonus, NewCharacter } from '../lib/defaults';
+import { migrateAge, migrateCondition, migrateDuration, migrateSpellReq } from '../lib/domain';
 
 import { BaseChance } from '../lib/defaults';
 import { roll } from '../lib/util';
 
+interface CharacterState {
+  chars: ICharacter[];
+  conf: IConfig;
+}
+
 export const useCharacterStore = defineStore('character', {
-  state: () => ({
+  state: (): CharacterState => ({
     chars: [NewCharacter()],
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     conf: {
       char: 0,
       showTrainedSkills: true,
       showSpells: true,
       darkMode: true,
-    } as IConfig,
+      locale: 'en-US',
+    },
   }),
   getters: {
     char: (state): ICharacter => state.chars[state.conf.char]!,
@@ -42,6 +48,26 @@ export const useCharacterStore = defineStore('character', {
     },
   },
   actions: {
+    migrateLegacyData() {
+      this.conf.locale ??= 'en-US';
+
+      this.chars = this.chars.map((char) => {
+        char.age = migrateAge(char.age);
+
+        Object.values(char.attributes).forEach((attribute: IAttribute) => {
+          attribute.condition.name = migrateCondition(attribute.condition.name);
+        });
+
+        char.spells = char.spells.map((spell: ISpell) => ({
+          ...spell,
+          duration: migrateDuration(spell.duration),
+          req: (spell.req ?? []).map((req) => migrateSpellReq(req)),
+        }));
+
+        return char;
+      });
+    },
+
     lockSkills() {
       const sections: SkillType[] = ['priSkills', 'secSkills', 'wepSkills'];
 
@@ -100,8 +126,9 @@ export const useCharacterStore = defineStore('character', {
         });
         if (!overwrite) this.chars.push(lChar);
       });
+      this.migrateLegacyData();
       //} else alert('This does not look like valid data for this app');
     },
   },
-  persist: true
+  persist: true,
 });

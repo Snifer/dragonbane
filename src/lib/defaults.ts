@@ -9,12 +9,13 @@ import type {
   IAbility,
   ISpell,
 } from '../components/models';
+import { Ages, Durations, Conditions } from '../components/models';
 
-export const NewCharacter = (): ICharacter => ({
+export const NewCharacter = (name = 'New character'): ICharacter => ({
   id: uid(),
-  name: 'New character',
+  name,
   kin: '',
-  age: 'Adult',
+  age: Ages.Adult,
   profession: '',
   weakness: '',
   appearance: '',
@@ -39,12 +40,12 @@ export const NewCharacter = (): ICharacter => ({
     copper: 0,
   },
   attributes: {
-    'STR': stat('Exhausted'),
-    'CON': stat('Sickly'),
-    'AGL': stat('Dazed'),
-    'INT': stat('Angry'),
-    'WIL': stat('Scared'),
-    'CHA': stat('Disheartened'),
+    'STR': stat(Conditions.Exhausted),
+    'CON': stat(Conditions.Sickly),
+    'AGL': stat(Conditions.Dazed),
+    'INT': stat(Conditions.Angry),
+    'WIL': stat(Conditions.Scared),
+    'CHA': stat(Conditions.Disheartened),
   },
   priSkills: {
     Acrobatics: skill('AGL'),
@@ -137,7 +138,7 @@ export const NewSpell = (): ISpell => ({
   req: [],
   time: '',
   range: '',
-  duration: 'Instant',
+  duration: Durations.Instant,
   text: '',
   prepared: false,
 });

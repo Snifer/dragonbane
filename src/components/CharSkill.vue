@@ -13,7 +13,7 @@
       size="lg"
       dense
     >
-      <q-tooltip>Advance</q-tooltip>
+      <q-tooltip>{{ t('charSkill.advance') }}</q-tooltip>
     </q-checkbox>
 
     <q-input
@@ -35,7 +35,7 @@
       size="lg"
       dense
     >
-      <q-tooltip>Trained</q-tooltip>
+      <q-tooltip>{{ t('charSkill.trained') }}</q-tooltip>
     </q-checkbox>
 
     <div class="col">{{ label }} ({{ skill.attr }})</div>
@@ -48,11 +48,11 @@
       <q-btn icon="mdi-dice-d20" @click="showRoller = true" flat round dense />
     </div>
 
-    <q-btn class="col-shrink" icon="delete" v-if="showDelete" @click="emit('delete', label)" flat dense rounded />
+    <q-btn class="col-shrink" icon="delete" v-if="showDelete" @click="emit('delete', canonicalName)" flat dense rounded />
   </div>
   <q-dialog v-model="showRoller" :maximized="$q.screen.lt.sm" position="right" full-height>
     <dice-roller
-      :name="label"
+      :name="canonicalName"
       :target="val"
       :boons="0"
       :banes="banes.length"
@@ -67,7 +67,7 @@ import { ref, computed } from 'vue';
 
 import { RollTypes, type ISkill, type RollType } from './models';
 
-import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 import { useCharacterStore } from '../stores/character';
 
 import { BaseChance } from '../lib/defaults';
@@ -77,13 +77,15 @@ import DiceRoller from './DiceRoller.vue';
 const skill = defineModel<ISkill>({ required: true });
 const props = defineProps<{
   label: string;
+  skillName?: string;
   showDelete?: boolean;
   skillType: RollType;
 }>();
 const emit = defineEmits(['delete']);
 
-const $q = useQuasar();
 const app = useCharacterStore();
+const { t } = useI18n();
+const canonicalName = props.skillName ?? props.label;
 const base = computed((): number => {
   const b = BaseChance(app.char.attributes[skill.value.attr].score);
   return skill.value.trained ? b * 2 : props.skillType == RollTypes.Secondary ? 0 : b;
@@ -103,16 +105,16 @@ const baned = computed((): boolean => {
   if (app.char.attributes[skill.value.attr].condition.check) b = true;
 
   Object.keys(app.char.armour.bane).forEach((k) => {
-    if (app.char.armour.bane[k] && k == props.label) b = true;
+    if (app.char.armour.bane[k] && k == canonicalName) b = true;
   });
 
   Object.keys(app.char.helmet.bane).forEach((k) => {
     const checked = app.char.helmet.bane[k];
     if (
-      (checked && k == props.label) ||
+      (checked && k == canonicalName) ||
       (checked &&
         k == 'Ranged Attacks' &&
-        (props.label == 'Bows' || props.label == 'Crossbows' || props.label == 'Slings'))
+        (canonicalName == 'Bows' || canonicalName == 'Crossbows' || canonicalName == 'Slings'))
     )
       b = true;
   });
@@ -125,16 +127,16 @@ const banes = computed((): number[] => {
   if (app.char.attributes[skill.value.attr].condition.check) b.push(0);
 
   Object.keys(app.char.armour.bane).forEach((k) => {
-    if (app.char.armour.bane[k] && k == props.label) b.push(0);
+    if (app.char.armour.bane[k] && k == canonicalName) b.push(0);
   });
 
   Object.keys(app.char.helmet.bane).forEach((k) => {
     const checked = app.char.helmet.bane[k];
     if (
-      (checked && k == props.label) ||
+      (checked && k == canonicalName) ||
       (checked &&
         k == 'Ranged Attacks' &&
-        (props.label == 'Bows' || props.label == 'Crossbows' || props.label == 'Slings'))
+        (canonicalName == 'Bows' || canonicalName == 'Crossbows' || canonicalName == 'Slings'))
     )
       b.push(0);
   });

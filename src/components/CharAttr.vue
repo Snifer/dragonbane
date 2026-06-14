@@ -7,7 +7,7 @@
     <q-btn icon="mdi-dice-d20" @click="showRoller = true" flat rounded dense size="md" />
     <q-btn :label="`${label} ${attr.score}`" class="col-shrink text-bold" size="lg" @click="editAttr" flat rounded />
     <q-checkbox
-      :label="attr.condition.name"
+      :label="t(`condition.${attr.condition.name}`)"
       v-model="attr.condition.check"
       size="sm"
       left-label
@@ -36,16 +36,18 @@ import { ref } from 'vue';
 import { RollTypes, type IAttribute } from './models';
 
 import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 
 import DiceRoller from './DiceRoller.vue';
 
 const attr = defineModel<IAttribute>({ required: true });
 const props = defineProps<{ label: string }>();
 const $q = useQuasar();
+const { t } = useI18n();
 const editAttr = () =>
   $q
     .dialog({
-      title: `Edit ${props.label}`,
+      title: t('dialog.editAttribute', { label: props.label }),
       cancel: true,
       prompt: {
         type: 'number',

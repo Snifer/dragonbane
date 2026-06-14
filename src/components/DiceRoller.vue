@@ -9,12 +9,12 @@
 
     <q-card-section class="row justify-evenly items-center">
       <div class="column q-pa-sm bg-blue-grey-10 rounded-borders">
-        <div class="text-h6 text-center">Boons</div>
+        <div class="text-h6 text-center">{{ t('dice.boons') }}</div>
         <inc-dec v-model.number="b.boons" />
       </div>
 
       <div class="column q-pa-sm bg-blue-grey-10 rounded-borders">
-        <div class="text-h6 text-center">Banes</div>
+        <div class="text-h6 text-center">{{ t('dice.banes') }}</div>
         <inc-dec v-model.number="b.banes" />
       </div>
     </q-card-section>
@@ -27,7 +27,7 @@
         <div class="col text-center text-h5 bg-blue-grey-10 rounded-borders q-pa-md">{{ d20Result.join(', ') }}</div>
       </div>
       <div v-if="rolled" class="text-center text-h5">
-        {{ resultText }}
+        {{ resultLabel }}
       </div>
     </q-card-section>
 
@@ -41,6 +41,7 @@ import { computed, ref, watch } from 'vue';
 import { D20Results, type RollType } from './models';
 
 import { useCharacterStore } from '../stores/character';
+import { useI18n } from 'vue-i18n';
 
 import { roll, sleep, deepCopy } from '../lib/util';
 
@@ -57,6 +58,7 @@ const props = defineProps<{
 const emit = defineEmits(['close', 'result']);
 
 const app = useCharacterStore();
+const { t } = useI18n();
 const b = ref({ boons: props.boons, banes: props.banes });
 const rolled = ref(false);
 
@@ -71,7 +73,12 @@ watch(
 );
 
 const rollBtnLabel = computed((): string =>
-  mods.value == 0 ? 'Roll' : `Roll with ${Math.abs(mods.value)} ${mods.value < 0 ? 'Bane(s)' : 'Boon(s)'}`,
+  mods.value == 0
+    ? t('dice.roll')
+    : t('dice.rollWithMods', {
+        count: Math.abs(mods.value),
+        type: mods.value < 0 ? t('dice.banesCount') : t('dice.boonsCount'),
+      }),
 );
 
 const rollIt = () => {
@@ -135,6 +142,17 @@ const resultText = computed((): string => {
   if (r <= props.target) return D20Results.Success;
   if (r > props.target) return D20Results.Fail;
 
-  return 'Something has gone wrong :(';
+  return t('dice.somethingWentWrong');
+});
+const resultLabel = computed(() => {
+  switch (resultText.value) {
+    case D20Results.Dragon:
+    case D20Results.Demon:
+    case D20Results.Success:
+    case D20Results.Fail:
+      return t(`diceResult.${resultText.value}`);
+    default:
+      return resultText.value;
+  }
 });
 </script>

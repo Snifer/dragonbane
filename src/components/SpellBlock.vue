@@ -15,9 +15,7 @@
 
     <template v-slot:content>
       <q-expansion-item
-        :label="`${spell.name} [${spell.rank > 0 ? 'Rank ' + spell.rank : 'Magic Trick'}${
-          spell.prepared ? ', Prepared' : ''
-        }]`"
+        :label="spellSummary"
         :caption="spell.text"
         header-class="text-bold q-pl-xs rounded-borders"
         :default-opened="!spell.name"
@@ -34,39 +32,49 @@
               size="lg"
               dense
             >
-              <q-tooltip>Prepared</q-tooltip>
+              <q-tooltip>{{ t('tabs.prepared') }}</q-tooltip>
             </q-checkbox>
-            <q-input class="col-grow" label="Name" v-model="spell.name" dense />
-            <q-select class="col" label="Skill" :options="skills" v-model="spell.skill" dense />
-            <q-input class="col-xs-2 col-sm-1" label="Rank" v-model.number="spell.rank" type="number" dense />
+            <q-input class="col-grow" :label="t('common.name')" v-model="spell.name" dense />
+            <q-select class="col" :label="t('weapon.skill')" :options="skills" v-model="spell.skill" dense />
+            <q-input class="col-xs-2 col-sm-1" :label="t('spell.rank')" v-model.number="spell.rank" type="number" dense />
           </div>
 
           <div v-if="spell.rank > 0" class="row">
-            <q-input class="col" label="Casting Time" v-model="spell.time" dense />
-            <q-select class="col" label="Duration" v-model="spell.duration" :options="Object.values(Durations)" dense />
+            <q-input class="col" :label="t('spell.castingTime')" v-model="spell.time" dense />
+            <q-select
+              class="col"
+              :label="t('spell.duration')"
+              v-model="spell.duration"
+              :options="durationSelectOptions"
+              emit-value
+              map-options
+              dense
+            />
           </div>
 
           <div v-if="spell.rank > 0" class="row items-end">
             <q-select
               class="col"
-              label="Requirements"
+              :label="t('spell.requirements')"
               v-model="spell.req"
               multiple
-              :options="Object.values(SpellReqs)"
+              :options="spellReqSelectOptions"
+              emit-value
+              map-options
               dense
             />
-            <q-input class="col" label="Range" v-model="spell.range" dense />
+            <q-input class="col" :label="t('weapon.range')" v-model="spell.range" dense />
           </div>
 
           <q-input
             class="row"
             v-if="spell.req.includes(SpellReqs.Ingredient)"
-            label="Ingredient"
+            :label="t('spell.ingredient')"
             v-model="spell.ingredient"
             dense
           />
 
-          <q-input class="row" label="Text" v-model="spell.text" dense autogrow />
+          <q-input class="row" :label="t('common.text')" v-model="spell.text" dense autogrow />
         </div>
       </q-expansion-item>
     </template>
@@ -92,15 +100,15 @@
           <div class="row full-width items-center q-px-md">
             <q-select
               class="col-grow q-mr-sm"
-              label="Power Level"
+              :label="t('spell.powerLevel')"
               :options="powerLevels"
               v-model="pl"
               dense
-              :hint="`Current WP: ${app.char.wp.current}`"
+              :hint="t('ability.currentWp', { wp: app.char.wp.current })"
             />
             <q-btn
               class="col-shrink"
-              :label="`Spend ${pl * 2} WP`"
+              :label="t('spell.spendWp', { wp: pl * 2 })"
               color="white"
               text-color="black"
               @click="app.char.wp.current -= pl * 2"
@@ -114,11 +122,11 @@
       <template v-slot:append>
         <q-card-section v-if="display.dragon" class="column">
           <div class="q-pa-md rounded-borders bg-blue-grey-10 text-bold">
-            <p class="text-bold">Choose one:</p>
+            <p class="text-bold">{{ t('common.chooseOne') }}</p>
             <ul class="q-pl-md">
-              <li class="q-pb-sm">The damage or range of the spell is doubled.</li>
-              <li class="q-pb-sm">The spell does not cost any WP.</li>
-              <li>You can immediately cast another spell, but get a bane on the roll.</li>
+              <li class="q-pb-sm">{{ t('spell.dragon.doubleDamageOrRange') }}</li>
+              <li class="q-pb-sm">{{ t('spell.dragon.freeCast') }}</li>
+              <li>{{ t('spell.dragon.extraCast') }}</li>
             </ul>
           </div>
         </q-card-section>
@@ -127,24 +135,24 @@
           <div class="row items-center q-mb-md justify-between">
             <q-btn
               class="col-shrink q-mr-md"
-              label="Roll your mishap"
+              :label="t('spell.rollMishap')"
               @click="mishap = rollTable(MagicalMishap) as string"
               outline
             />
-            <div class="col">{{ mishap }}</div>
+            <div class="col">{{ mishap ? t(mishap) : '' }}</div>
           </div>
-          <q-expansion-item label="Magical Mishap Table" header-class="text-h6">
+          <q-expansion-item :label="t('spell.magicalMishapTable')" header-class="text-h6">
             <table>
               <thead>
                 <tr>
                   <th>D20</th>
-                  <th>Effect</th>
+                  <th>{{ t('common.effect') }}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="(row, i) in MagicalMishap.rows" :key="`mm-${i}`">
                   <td class="q-pa-xs">{{ row.floor }}</td>
-                  <td class="q-pa-xs">{{ row.text }}</td>
+                  <td class="q-pa-xs">{{ t(row.text) }}</td>
                 </tr>
               </tbody>
             </table>
@@ -152,7 +160,7 @@
         </q-card-section>
         <dice-select v-if="display.dragon || display.success" v-model="dmgDice" />
         <q-card-section v-if="display.dragon || display.success" class="column justify-start items-center">
-          <q-btn label="Roll" @click="dmgRes = rollDice(dmgDice)" color="white" text-color="black" />
+          <q-btn :label="t('dice.roll')" @click="dmgRes = rollDice(dmgDice)" color="white" text-color="black" />
           <div v-if="dmgRes.total != 0" class="text-h4 bg-blue-grey-10 rounded-borders q-pa-sm">
             {{ dmgRes.total }}
           </div>
@@ -166,11 +174,13 @@
 <script lang="ts" setup>
 import { computed, ref } from 'vue';
 
-import { D20Results, Durations, type IDiceRoll, type ISpell, RollTypes, SpellReqs } from './models';
+import { D20Results, type IDiceRoll, type ISpell, RollTypes, SpellReqs } from './models';
 
 import { useQuasar } from 'quasar';
+import { useI18n } from 'vue-i18n';
 import { useCharacterStore } from '../stores/character';
 
+import { durationOptions, spellReqOptions } from '../lib/domain';
 import { rollDice, parseDiceString } from '../lib/util';
 import { MagicalMishap, rollTable } from '../lib/tables';
 
@@ -182,7 +192,25 @@ const spell = defineModel<ISpell>({ required: true });
 defineEmits(['delete']);
 
 const app = useCharacterStore();
+const { t } = useI18n();
 const skills = computed((): string[] => Object.keys(app.char.secSkills));
+const durationSelectOptions = computed(() =>
+  durationOptions.map((value) => ({
+    value,
+    label: t(`duration.${value}`),
+  })),
+);
+const spellReqSelectOptions = computed(() =>
+  spellReqOptions.map((value) => ({
+    value,
+    label: t(`spellReq.${value}`),
+  })),
+);
+const spellSummary = computed(() => {
+  const rankLabel = spell.value.rank > 0 ? t('spell.rankN', { rank: spell.value.rank }) : t('spell.magicTricks');
+  const preparedLabel = spell.value.prepared ? `, ${t('tabs.prepared')}` : '';
+  return `${spell.value.name} [${rankLabel}${preparedLabel}]`;
+});
 const dmgDice = ref(parseDiceString(spell.value.text));
 // For spells we only include the first dice set mentioned
 dmgDice.value.splice(1);
@@ -234,7 +262,7 @@ const useMagicTrick = (name: string) =>
   checkWP(1)
     ? $q
         .dialog({
-          title: `Spend 1 WP to use ${name}?`,
+          title: t('spell.useMagicTrick', { name }),
           ok: true,
           cancel: true,
         })
@@ -245,8 +273,8 @@ const checkWP = (wpReq: number): boolean => {
   let out = false;
   if (app.char.wp.current < wpReq) {
     $q.dialog({
-      title: 'Out of Juice!',
-      message: `You have ${app.char.wp.current}WP`,
+      title: t('spell.outOfJuice'),
+      message: t('ability.currentWp', { wp: app.char.wp.current }),
       ok: true,
     }).onOk(() => (out = false));
   } else {
