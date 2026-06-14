@@ -45,10 +45,16 @@ This repo is configured to publish the SPA to GitHub Pages from the `main` branc
 3. Set **Source** to **GitHub Actions**
 4. Wait for the `Deploy to GitHub Pages` workflow to finish
 
-The app will be published under:
+The PWA build will be published under:
 
 ```text
 https://snifer.github.io/dragonbane/
+```
+
+The web app manifest should then be available at:
+
+```text
+https://snifer.github.io/dragonbane/manifest.json
 ```
 
 ### Customize the configuration

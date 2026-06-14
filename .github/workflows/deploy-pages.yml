@@ -38,8 +38,8 @@ jobs:
       - name: Typecheck
         run: npx vue-tsc --noEmit
 
-      - name: Build SPA
-        run: npm run build
+      - name: Build PWA
+        run: npx quasar build -m pwa
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
@@ -47,7 +47,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: dist/spa
+          path: dist/pwa
 
   deploy:
     environment:
